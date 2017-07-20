@@ -17,7 +17,7 @@ appState.locking = null;
 var router = express.Router();
 router.get('/status', function(req, res) {
 	appState.pos.tryFindCom(function(posFound, posComName) {
-	  res.json({posFound: posFound, posComname: posComname});
+	  res.json({posFound: posFound, posComname: posComName});
 	});
 });
 
@@ -37,7 +37,7 @@ router.get('/lock/:purchaseNumber', function(req, res) {
 		appState.locking = false;
 		res.json({success: false});
 	}
-	appstate.pos.openCom(successCallback, errorCallback);
+	appState.pos.openCom(successCallback, errorCallback);
 })
 
 var app = express();
@@ -71,14 +71,30 @@ wss.on('connection', function connection(ws, req) {
       setTimeout(function () {
       	if (!handled) {
       		appState.locking = null;
-      		ws.send(JSON.stringify({error: "timeout"}))
+
+          try{
+            ws.send(JSON.stringify({error: "timeout"}))
+          } catch(e) {
+            console.log(e);
+          }
+      		
+          appState.pos.close();
+      
       	}
 			}, 120000)
 
       appState.pos.pay(request.price, request.purchaseNumber, function(result) {
       	handled = true;
       	appState.locking = null;
-      	ws.send(JSON.stringify(result));
+
+          try{
+            ws.send(JSON.stringify(result));
+          } catch(e) {
+            console.log(e);
+          }
+
+          appState.pos.close();
+      
       })
     });
     

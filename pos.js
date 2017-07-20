@@ -19,22 +19,22 @@ POS.prototype.tryFindCom = function(callback) {
 	var self = this;
 	SerialPort.list(function (err, ports) {
 		if (err) {
-	  	this.posComName = "";
-	  	this.posFound = false;
+	  	self.posComName = "";
+	  	self.posFound = false;
 			console.log("serial port list err: " + err);	
 			return;
 		}
 		var r = /Landi/i;
 	  ports.forEach(function(port) {
 	  	if (r.test(port.manufacturer)) {
-	  		this.posComName = port.comName;
-	  		this.posFound = true;
-	  		callback(this.posFound, this.posComName)
+	  		self.posComName = port.comName;
+	  		self.posFound = true;
+	  		callback(self.posFound, self.posComName)
 	  	}
 	  });
-	  if (!this.posFound) {
-	  	this.posComName = "";
-	  	this.posFound = false;
+	  if (!self.posFound) {
+	  	self.posComName = "";
+	  	self.posFound = false;
 	  	console.log("no available com found for pos!!!");
 	  	callback(false, "");
 	  }
@@ -42,7 +42,7 @@ POS.prototype.tryFindCom = function(callback) {
 }
 
 POS.prototype.openCom = function(successCallback, errorCallback) {
-
+	console.log(this);
 	this.port = new SerialPort(this.posComName, function (err) {
   	if (err) {
   		if (errorCallback) errorCallback(err);
@@ -56,18 +56,18 @@ POS.prototype.openCom = function(successCallback, errorCallback) {
 	var self = this;
 	// The open event is always emitted
 	this.port.on('data', function(data) {
-	  // open logic
-   	console.log(recvData);
-			self.recv_buffer = concatBuffers(self.recv_buffer, recvData);
-			var result = processRecv(self.recv_buffer);
-			if (result != null) {
-				self.recv_buffer = new ArrayBuffer(0);
-				self.recv_cb(result);
-			}
+	  	// open logic
+   		console.log(recvData);
+		self.recv_buffer = concatBuffers(self.recv_buffer, recvData);
+		var result = processRecv(self.recv_buffer);
+		if (result != null) {
+			self.recv_buffer = new ArrayBuffer(0);
+			self.recv_cb(result);
+		}
 	});
 
-	this.port.on('close', function() {
-
+	this.port.on('close', function(e) {
+		console.log("POS CLOSE: " + e);
 	})
 
 	this.port.on('error', function(err) {
