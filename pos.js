@@ -42,7 +42,7 @@ POS.prototype.tryFindCom = function(callback) {
 }
 
 POS.prototype.openCom = function(successCallback, errorCallback) {
-	console.log(this);
+
 	this.port = new SerialPort(this.posComName, function (err) {
   	if (err) {
   		if (errorCallback) errorCallback(err);
@@ -57,8 +57,8 @@ POS.prototype.openCom = function(successCallback, errorCallback) {
 	// The open event is always emitted
 	this.port.on('data', function(data) {
 	  	// open logic
-   		console.log(recvData);
-		self.recv_buffer = concatBuffers(self.recv_buffer, recvData);
+   		console.log(data);
+		self.recv_buffer = concatBuffers(self.recv_buffer, data);
 		var result = processRecv(self.recv_buffer);
 		if (result != null) {
 			self.recv_buffer = new ArrayBuffer(0);
@@ -133,6 +133,7 @@ function concatBuffers(arr) {
 
 
 function processRecv(recv_buffer){
+	console.log("recv_buffer: " + recv_buffer);
 	var view = new DataView(recv_buffer.buffer);
 	var length = bcd2int(view.getUint16(1));
 	console.log("processRecv : " + length);
@@ -231,6 +232,7 @@ function makePosResult(blocks) {
 		}
 	}
 	result.tradeTime = result.date + ' ' + result.time;
+	console.log("result: " + JSON.stringify(result));
 	return result;
 }
 

@@ -114,7 +114,7 @@ function TlvBlocks(dataBuffer) {
 		
 		view = new Uint8Array(dataBuffer, offset + 4);
 		block.value = '';
-		if (block.tag == 0x0909) {
+		if (block.tag == 0x0908) {
 			var buffer = [];
 			for (var i = 0; i < block.dataLength; ++i) {
 				buffer.push(view[i]);
