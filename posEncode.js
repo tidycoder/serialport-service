@@ -150,4 +150,4 @@ function calcLRC(dataBuffer) {
 	return lrc;
 }
 
-export default encode;
+module.exports = encode;

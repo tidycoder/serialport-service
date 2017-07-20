@@ -1,10 +1,103 @@
-var SerialPort = require('serialport');
+
+const SerialPort = require('serialport');
+const encode = require('./posEncode.js');
+const decode = require('./posDecode.js');
 
 
 
+function POS() {
+	this.posComName = '';
+	this.posFound = false;
 
-import decodePosData from './posDecode';
-import encodePosData from './posEncode';
+	this.port = null;
+
+	this.recv_buffer = new ArrayBuffer(0);
+	this.recv_cb = null;
+}
+
+POS.prototype.tryFindCom = function(callback) {
+	var self = this;
+	SerialPort.list(function (err, ports) {
+		if (err) {
+	  	this.posComName = "";
+	  	this.posFound = false;
+			console.log("serial port list err: " + err);	
+			return;
+		}
+		var r = /Landi/i;
+	  ports.forEach(function(port) {
+	  	if (r.test(port.manufacturer)) {
+	  		this.posComName = port.comName;
+	  		this.posFound = true;
+	  		callback(this.posFound, this.posComName)
+	  	}
+	  });
+	  if (!this.posFound) {
+	  	this.posComName = "";
+	  	this.posFound = false;
+	  	console.log("no available com found for pos!!!");
+	  	callback(false, "");
+	  }
+	});
+}
+
+POS.prototype.openCom = function(successCallback, errorCallback) {
+
+	this.port = new SerialPort(this.posComName, function (err) {
+  	if (err) {
+  		if (errorCallback) errorCallback(err);
+  		console.log('Error: ', err.message);
+  	} else {
+  		if (successCallback) successCallback();
+  		console.log('Open success!');
+  	}
+	});
+
+	var self = this;
+	// The open event is always emitted
+	this.port.on('data', function(data) {
+	  // open logic
+   	console.log(recvData);
+			self.recv_buffer = concatBuffers(self.recv_buffer, recvData);
+			var result = processRecv(self.recv_buffer);
+			if (result != null) {
+				self.recv_buffer = new ArrayBuffer(0);
+				self.recv_cb(result);
+			}
+	});
+
+	this.port.on('close', function() {
+
+	})
+
+	this.port.on('error', function(err) {
+		 console.log('POS Error: ', err.message);
+	})
+
+}
+
+POS.prototype.pay = function(price, purchaseNumber, callback) {
+	this.recv_cb = callback;
+  var encoded = encode('A', '' + price, '' + purchaseNumber);
+  var data =  new Buffer(encoded);
+  console.log(data);
+  this.write(data);  
+}
+
+POS.prototype.write = function(buffer) {
+	this.port.write(buffer, function(err) {
+	  if (err) {
+	    return console.log('Error on write: ', err.message);
+	  }
+	  console.log('message written');
+	});
+}
+
+POS.prototype.close = function() {
+	if (this.port) {
+		this.port.close();
+	}
+}
 
 
 function bcd2int(bcd) {
@@ -44,12 +137,11 @@ function processRecv(recv_buffer){
 	var length = bcd2int(view.getUint16(1));
 	console.log("processRecv : " + length);
 	if (recv_buffer.length >= length + 5){
-		var blocks = decodePosData(recv_buffer.buffer);
+		var blocks = decode(recv_buffer.buffer);
 		return makePosResult(blocks);
 	} else {
 		return null;
 	}
-
 }
 
 
@@ -142,76 +234,4 @@ function makePosResult(blocks) {
 	return result;
 }
 
-export default class POS {
-
-	constructor(recv_cb) {
-		this.portName  = null;
-		this.port = null;
-		this.recv_buffer = new ArrayBuffer(0);
-		this.recv_cb = recv_cb;
-
-		var self = this;
-		SerialPortFactory.isInstalled(function(err){
-			if (err) {
-				alert("Chrome serial port plugin is not installed : " + JSON.stringify(err));
-			} else {
-				var exists = null;
-				SerialPortFactory.list(function(err, data){
-				  console.log(data);
-				  var r = new RegExp('Landi*');
-				  for (var i = 0; i < data.length; ++i) {
-				  	if (r.test(data[i].manufacturer)) {
-				  		exists = data[i].comName;
-				  		break;
-				  	}
-				  }
-				  if (exists == null) {
-				  	alert('no available com!');
-				  } else {
-				  	console.log('use com :' + exists);
-				  	self.portName = exists;
-				  	self._open();
-				  }
-				});
-			}
-		});
-	}
-
-	_open() {
-		var self = this;
-		this.port = new SerialPort(this.portName, {}, true, function() {
-			console.log("serial port opened!");
-			self.port.addListener('data', function(recvData) {
- 	 			console.log(recvData);
- 	 			self.recv_buffer = concatBuffers(self.recv_buffer, recvData);
- 	 			var result = processRecv(self.recv_buffer);
- 	 			if (result != null) {
- 	 				self.recv_buffer = new ArrayBuffer(0);
- 	 				self.recv_cb(result);
- 	 			}
- 	 		})
-		});
-	}
-
-	close() {
-		if (this.port) {
-			this.port.close();
-		}
-	}
-
-	pay(payType, price, orderNumber) {
-		var data =  new Buffer(encodePosData(payType, "1", orderNumber));
-		console.log(data);
-		this.port.write(data, function(err) {
-	    	if (err) {
-	    		console.log("error: " + err);
-	    	}
-	    })
-	}
-
-}
-
-
-
-
-
+module.exports = POS;

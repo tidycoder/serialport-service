@@ -19,7 +19,7 @@ TAG	Length(BYTE)	Value
 
 */
 
-import iconv from 'iconv-lite';
+const iconv = require('iconv-lite');
 
 
 function decode(packet) {
@@ -136,4 +136,4 @@ function TlvBlocks(dataBuffer) {
 }
 
 
-export default decode;
+module.exports = decode;
