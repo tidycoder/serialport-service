@@ -7,6 +7,7 @@ const SerialPort = require('serialport');
 const PORT = process.env.PORT || 6996;
 
 
+require('console-stamp')(console, '[HH:MM:ss.l dd/mm]');
 
 var appState = {};
 
@@ -81,7 +82,7 @@ wss.on('connection', function connection(ws, req) {
           appState.pos.close();
       
       	}
-			}, 120000)
+			}, 60000)
 
       appState.pos.pay(request.price, request.purchaseNumber, function(result) {
       	handled = true;
