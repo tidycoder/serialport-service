@@ -64,6 +64,7 @@ wss.on('connection', function connection(ws, req) {
       console.log('received: %s', JSON.stringify(request));
       if (!request.price || !request.purchaseNumber) {
       	ws.send(JSON.stringify({error: "invalid request"}))
+        ws.close();
       	return;
       }
       // if (request.purchaseNumber != appState.locking) {
