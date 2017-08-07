@@ -23,11 +23,11 @@ router.get('/status', function(req, res) {
 
 
 router.get('/lock/:purchaseNumber', function(req, res) {
-	const locking = req.params.purchaseNumber;
-	if (appState.locking) {
-		res.json({success: false, locked: locking});
-		return;
-	}
+	// const locking = req.params.purchaseNumber;
+	// if (appState.locking) {
+	// 	res.json({success: false, locked: locking});
+	// 	return;
+	// }
 
 	var successCallback = function() {
 		appState.locking = locking;
@@ -37,6 +37,9 @@ router.get('/lock/:purchaseNumber', function(req, res) {
 		appState.locking = false;
 		res.json({success: false});
 	}
+
+  // 执行两次， 会打开两次吗？
+  // 付费中，刷新，继续付费！！？
 	appState.pos.openCom(successCallback, errorCallback);
 })
 
@@ -62,30 +65,40 @@ wss.on('connection', function connection(ws, req) {
       	ws.send(JSON.stringify({error: "invalid request"}))
       	return;
       }
-      if (request.purchaseNumber != appState.locking) {
-      	ws.send(JSON.stringify({error: "invalid purchaseNumber, current: " + appState.locking}))
-      	return;
-      }
+      // if (request.purchaseNumber != appState.locking) {
+      //   console.log("invalid purchaseNumber, current: " + appState.locking);
+      // 	ws.send(JSON.stringify({error: "invalid purchaseNumber, current: " + appState.locking}))
+      // 	return;
+      // }
 
-      var handled = false;
-      setTimeout(function () {
-      	if (!handled) {
-      		appState.locking = null;
+      console.log("set timeout 60000");
 
-          try{
+      var t = setTimeout(function () {
+        console.log("timeout executed");
+
+        try{
+          if (ws.isOpen) {
             ws.send(JSON.stringify({error: "timeout"}))
-          } catch(e) {
-            console.log(e);
+            console.log("timeout send!");
+          } else {
+            console.log("timeout send , but ws is closed!")
           }
-      		
-          appState.pos.close();
-      
-      	}
-			}, 120000)
+        } catch(e) {
+          console.log(e);
+        }
+    		
+        // appState.locking = null;
+        // appState.pos.close();
+        if (ws.isOpen) {
+          ws.close();
+        }
+
+			}, 60000)
 
       appState.pos.pay(request.price, request.purchaseNumber, function(result) {
-      	handled = true;
-      	appState.locking = null;
+        console.log("clear timeout ??");
+        clearTimeout(t);
+        t = undefined;
 
           try{
             ws.send(JSON.stringify(result));
@@ -93,9 +106,18 @@ wss.on('connection', function connection(ws, req) {
             console.log(e);
           }
 
-          appState.pos.close();
+          // send 之后立刻close没问题？
+          ws.close();
+
+          // appState.locking = null;
+          // appState.pos.close();
       
       })
     });
     
+    ws.on('close', function() {
+      console.log("connection closed!!")
+      appState.locking = null;
+      appState.pos.close();
+    })
 });

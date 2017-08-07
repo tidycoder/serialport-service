@@ -3,7 +3,5 @@ module.exports = {
   output: {
     filename: 'serialport-service.bundle.js'
   },
-  node: {
-  	fs: 'empty'
-  }
+  target: 'node'
 }
