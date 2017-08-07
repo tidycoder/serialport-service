@@ -7,6 +7,7 @@ const SerialPort = require('serialport');
 const PORT = process.env.PORT || 6996;
 
 
+require('console-stamp')(console, '[HH:MM:ss.l dd/mm]');
 
 var appState = {};
 
