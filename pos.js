@@ -26,7 +26,8 @@ POS.prototype.tryFindCom = function(callback) {
 		}
 		var r = /Landi/i;
 	  ports.forEach(function(port) {
-	  	if (r.test(port.manufacturer)) {
+	  	console.log(port);
+	  	if (r.test(port.manufacturer) || port.vendorId == '0525' || port.productId == 'A4A7') {
 	  		self.posComName = port.comName;
 	  		self.posFound = true;
 	  		callback(self.posFound, self.posComName)

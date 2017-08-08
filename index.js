@@ -82,7 +82,7 @@ wss.on('connection', function connection(ws, req) {
           appState.pos.close();
       
       	}
-			}, 60000)
+			}, 90000)
 
       appState.pos.pay(request.price, request.purchaseNumber, function(result) {
       	handled = true;
