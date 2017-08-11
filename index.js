@@ -24,11 +24,11 @@ router.get('/status', function(req, res) {
 
 
 router.get('/lock/:purchaseNumber', function(req, res) {
-	// const locking = req.params.purchaseNumber;
-	// if (appState.locking) {
-	// 	res.json({success: false, locked: locking});
-	// 	return;
-	// }
+	const locking = req.params.purchaseNumber;
+	if (appState.locking) {
+		res.json({success: false, locked: locking});
+		return;
+  }
 
 	var successCallback = function() {
 		appState.locking = locking;
@@ -58,6 +58,7 @@ const wss = new WebSocket.Server({ server });
 wss.on('connection', function connection(ws, req) {
 		const location = url.parse(req.url, true);
     console.log("connection: " + JSON.stringify(location));
+    console.log("connection open ? " + ws.readyState);
     //on connect message
     ws.on('message', function incoming(message) {
     	var request = JSON.parse(message);
@@ -67,19 +68,19 @@ wss.on('connection', function connection(ws, req) {
         ws.close();
       	return;
       }
-      // if (request.purchaseNumber != appState.locking) {
-      //   console.log("invalid purchaseNumber, current: " + appState.locking);
-      // 	ws.send(JSON.stringify({error: "invalid purchaseNumber, current: " + appState.locking}))
-      // 	return;
-      // }
+      if (request.purchaseNumber != appState.locking) {
+        console.log("invalid purchaseNumber, current: " + appState.locking);
+       	ws.send(JSON.stringify({error: "invalid purchaseNumber, current: " + appState.locking}));
+        ws.close();
+       	return;
+      }
 
-      console.log("set timeout 60000");
-
+/*
       var t = setTimeout(function () {
-        console.log("timeout executed");
+        console.log("timeout executed" );
 
         try{
-          if (ws.isOpen) {
+          if (ws.readyState === WebSocket.OPEN) {
             ws.send(JSON.stringify({error: "timeout"}))
             console.log("timeout send!");
           } else {
@@ -90,19 +91,20 @@ wss.on('connection', function connection(ws, req) {
           console.log(e);
         }
     		
-        // appState.locking = null;
-        // appState.pos.close();
-        if (ws.isOpen) {
+        if (ws.readyState === WebSocket.OPEN) {
           ws.close();
         }
 
 			}, 90000)
 
+      console.log("set timeout : " + t);
+      */
+
       appState.pos.pay(request.price, request.purchaseNumber, function(result) {
-        console.log("clear timeout ??");
+/*        console.log("clear timeout : " + t);
         clearTimeout(t);
         t = undefined;
-
+*/
           try{
             ws.send(JSON.stringify(result));
           } catch(e) {

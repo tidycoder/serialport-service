@@ -24,15 +24,19 @@ POS.prototype.tryFindCom = function(callback) {
 			console.log("serial port list err: " + err);	
 			return;
 		}
-		var r = /Landi/i;
-	  ports.forEach(function(port) {
-	  	console.log(port);
-	  	if (r.test(port.manufacturer) || port.vendorId == '0525' || port.productId == 'A4A7') {
-	  		self.posComName = port.comName;
-	  		self.posFound = true;
-	  		callback(self.posFound, self.posComName)
-	  	}
-	  });
+		var r = /Prolific/i;
+	  	ports.forEach(function(port) {
+	  		console.log(port);
+	  		if (r.test(port.manufacturer) 
+	  			|| port.vendorId == '067B'
+	  			|| port.productId == '2323'
+	  		) {
+	  			self.posComName = port.comName;
+	  			self.posFound = true;
+	  			callback(self.posFound, self.posComName)
+	  		}
+  		});
+
 	  if (!self.posFound) {
 	  	self.posComName = "";
 	  	self.posFound = false;
@@ -58,13 +62,16 @@ POS.prototype.openCom = function(successCallback, errorCallback) {
 	// The open event is always emitted
 	this.port.on('data', function(data) {
 	  	// open logic
-   		console.log(data);
-		self.recv_buffer = concatBuffers(self.recv_buffer, data);
-		var result = processRecv(self.recv_buffer);
-		if (result != null) {
-			self.recv_buffer = new ArrayBuffer(0);
-			self.recv_cb(result);
-		}
+	  	if (data && data.byteLength > 0) {
+	  		console.log("from pos data: " + data);
+	  		self.recv_buffer = concatBuffers(self.recv_buffer, data);
+			var result = processRecv(self.recv_buffer);
+			if (result != null) {
+				self.recv_buffer = new ArrayBuffer(0);
+				self.recv_cb(result);
+			}	
+	  	}
+		
 	});
 
 	this.port.on('close', function(e) {
@@ -86,19 +93,16 @@ POS.prototype.pay = function(price, purchaseNumber, callback) {
 }
 
 POS.prototype.write = function(buffer) {
-	if (this.port) {
-		this.port.write(buffer, function(err) {
-		  if (err) {
-		    return console.log('Error on write: ', err.message);
-		  }
-		  console.log('message written');
-		});
-
-	}
+	this.port.write(buffer, function(err) {
+	  if (err) {
+	    return console.log('Error on write: ', err.message);
+	  }
+	  console.log('message written');
+	});
 }
 
 POS.prototype.close = function() {
-	if (this.port && this.port.isOpen) {
+	if (this.port) {
 		this.port.close();
 	}
 }
@@ -138,9 +142,13 @@ function concatBuffers(arr) {
 
 function processRecv(recv_buffer){
 	console.log("recv_buffer: " + recv_buffer);
+	if (recv_buffer.length < 6) {
+		return null;
+	}
 	var view = new DataView(recv_buffer.buffer);
 	var length = bcd2int(view.getUint16(1));
 	console.log("processRecv : " + length);
+
 	if (recv_buffer.length >= length + 5){
 		var blocks = decode(recv_buffer.buffer);
 		return makePosResult(blocks);
