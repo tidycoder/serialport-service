@@ -141,15 +141,15 @@ function concatBuffers(arr) {
 
 
 function processRecv(recv_buffer){
-	console.log("recv_buffer: " + recv_buffer);
 	if (recv_buffer.length < 6) {
 		return null;
 	}
 	var view = new DataView(recv_buffer.buffer);
 	var length = bcd2int(view.getUint16(1));
-	console.log("processRecv : " + length);
 
 	if (recv_buffer.length >= length + 5){
+		console.log("processRecv length: " + length);
+		console.log("recv_buffer:" + recv_buffer);
 		var blocks = decode(recv_buffer.buffer);
 		return makePosResult(blocks);
 	} else {
