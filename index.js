@@ -44,6 +44,7 @@ router.get('/lock/:purchaseNumber', function(req, res) {
 	appState.pos.openCom(successCallback, errorCallback);
 })
 
+
 var app = express();
 app.use(cors())
 app.use("/", router);
@@ -125,4 +126,18 @@ wss.on('connection', function connection(ws, req) {
       appState.locking = null;
       appState.pos.close();
     })
+});
+
+router.get('/debug', function(req, res) {
+  console.log("=================debug begin=================")
+  console.log("appState: " + JSON.stringify(appState));
+   wss.clients.forEach(function each(client) {
+    if (client.readyState === WebSocket.OPEN) {
+      console.log("opened client: " + client);
+    } else {
+      console.log("client state: " + client.readyState);
+      console.log(client);
+    }
+  }); 
+  console.log("=================debug end=================")
 });

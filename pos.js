@@ -93,17 +93,23 @@ POS.prototype.pay = function(price, purchaseNumber, callback) {
 }
 
 POS.prototype.write = function(buffer) {
-	this.port.write(buffer, function(err) {
-	  if (err) {
-	    return console.log('Error on write: ', err.message);
-	  }
-	  console.log('message written');
-	});
+	if (this.port && this.port.isOpen) {
+		this.port.write(buffer, function(err) {
+		  if (err) {
+		    return console.log('Error on write: ', err.message);
+		  }
+		  console.log('message written');
+		});
+	} else {
+		console.log("Error on write: not opened pos!");
+	}
 }
 
 POS.prototype.close = function() {
-	if (this.port) {
+	if (this.port && this.port.isOpen) {
 		this.port.close();
+	} else {
+		console.log("pos close error! close not opened POS");
 	}
 }
 
